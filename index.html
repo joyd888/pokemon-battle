@@ -17,7 +17,7 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
-            background: linear-gradient(135deg, #FFCC00 0%, #FF9900 100%); /* Pikachu yellow gradient */
+            background: linear-gradient(135deg, #FFCC00 0%, #FF9900 100%);
             color: white;
             padding: 30px;
             border-radius: 15px;
@@ -97,6 +97,14 @@
             font-weight: bold;
         }
 
+        .pokemon-image {
+            width: 96px;
+            height: 96px;
+            image-rendering: pixelated;
+            margin: 10px auto;
+            display: block;
+        }
+
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -118,7 +126,6 @@
 
         .stat-fill {
             height: 100%;
-            background-color: #4CAF50;
             transition: width 0.3s;
         }
 
@@ -131,14 +138,9 @@
             text-align: center;
         }
 
-        .winner {
-            color: #4CAF50;
+        .winner, .loser {
             font-weight: bold;
-            font-size: 18px;
-        }
-
-        .loser {
-            color: #f44336;
+            font-size: 20px;
         }
 
         .chart-container {
@@ -163,11 +165,9 @@
 </head>
 <body>
     <div class="header">
-        <h1><h1>&#9876; Pokémon Battle Comparison Tool</h1>
- Pokémon Battle Comparison Tool</h1>
+        <h1>&#9876; Pokémon Battle Comparison Tool</h1>
         <p>Compare any two Pokémon and see who would win in battle!</p>
     </div>
-
 
     <div class="filters">
         <div class="filter-group">
@@ -225,7 +225,6 @@
 
     <script src="pokemon_data.js"></script>
     <script>
-
         const typeColors = {
             normal: '#A8A878',
             fire: '#F08030',
@@ -251,42 +250,26 @@
         let selectedPokemon1 = null;
         let selectedPokemon2 = null;
 
-
         function init() {
-            console.log("Initializing Pokémon Battle Tool...");
-
-
             if (typeof POKEMON_DATA === 'undefined') {
-                console.error("POKEMON_DATA is not defined!");
                 document.getElementById('battleResult').innerHTML =
                     '<div class="error">Error: Pokémon data not loaded. Please check pokemon_data.js file.</div>';
                 return;
             }
 
-            console.log("✅ POKEMON_DATA loaded successfully!");
-            console.log("Number of Pokémon:", POKEMON_DATA.length);
-
-
             filteredPokemon = POKEMON_DATA;
-
-
             populateFilters();
             populatePokemonSelectors();
-
-            console.log("✅ Application initialized successfully!");
         }
-
 
         function populateFilters() {
             const typeFilter = document.getElementById('typeFilter');
             const generationFilter = document.getElementById('generationFilter');
 
-
             const allTypes = new Set();
             POKEMON_DATA.forEach(pokemon => {
                 pokemon.types.forEach(type => allTypes.add(type));
             });
-
 
             Array.from(allTypes).sort().forEach(type => {
                 const option = document.createElement('option');
@@ -294,7 +277,6 @@
                 option.textContent = type.charAt(0).toUpperCase() + type.slice(1);
                 typeFilter.appendChild(option);
             });
-
 
             const generations = [...new Set(POKEMON_DATA.map(p => p.generation))].sort();
             generations.forEach(gen => {
@@ -304,21 +286,17 @@
                 generationFilter.appendChild(option);
             });
 
-
             typeFilter.addEventListener('change', updateFilters);
             generationFilter.addEventListener('change', updateFilters);
             document.getElementById('legendaryFilter').addEventListener('change', updateFilters);
         }
 
-
         function populatePokemonSelectors() {
             const selector1 = document.getElementById('pokemon1Selector');
             const selector2 = document.getElementById('pokemon2Selector');
 
-
             while (selector1.children.length > 1) selector1.removeChild(selector1.lastChild);
             while (selector2.children.length > 1) selector2.removeChild(selector2.lastChild);
-
 
             filteredPokemon.forEach(pokemon => {
                 const option1 = document.createElement('option');
@@ -332,11 +310,9 @@
                 selector2.appendChild(option2);
             });
 
-
             selector1.addEventListener('change', (e) => selectPokemon(e.target.value, 1));
             selector2.addEventListener('change', (e) => selectPokemon(e.target.value, 2));
         }
-
 
         function updateFilters() {
             const typeFilter = document.getElementById('typeFilter').value;
@@ -346,7 +322,8 @@
             filteredPokemon = POKEMON_DATA.filter(pokemon => {
                 const typeMatch = !typeFilter || pokemon.types.includes(typeFilter);
                 const generationMatch = !generationFilter || pokemon.generation == generationFilter;
-                const legendaryMatch = !legendaryFilter ||
+                const legendaryMatch =
+                    !legendaryFilter ||
                     (legendaryFilter === 'true' && pokemon.legendary) ||
                     (legendaryFilter === 'false' && !pokemon.legendary);
 
@@ -354,7 +331,6 @@
             });
 
             populatePokemonSelectors();
-
 
             if (selectedPokemon1 && !filteredPokemon.find(p => p.id === selectedPokemon1.id)) {
                 selectedPokemon1 = null;
@@ -371,14 +347,12 @@
             updateBattleAnalysis();
         }
 
-
         function resetFilters() {
             document.getElementById('typeFilter').value = '';
             document.getElementById('generationFilter').value = '';
             document.getElementById('legendaryFilter').value = '';
             updateFilters();
         }
-
 
         function selectPokemon(pokemonId, slot) {
             const pokemon = POKEMON_DATA.find(p => p.id == pokemonId);
@@ -394,6 +368,13 @@
             updateBattleAnalysis();
         }
 
+        function getPokemonColors(pokemon) {
+            const primaryType = pokemon.types[0];
+            const secondaryType = pokemon.types[1];
+            const primaryColor = typeColors[primaryType] || '#4CAF50';
+            const secondaryColor = secondaryType ? (typeColors[secondaryType] || primaryColor) : primaryColor;
+            return { primaryColor, secondaryColor };
+        }
 
         function updatePokemonDetails(pokemon, elementId) {
             if (!pokemon) {
@@ -403,16 +384,27 @@
 
             const detailsDiv = document.getElementById(elementId);
 
-
             const typeBadges = pokemon.types.map(type =>
                 `<span class="type-badge" style="background-color: ${typeColors[type] || '#777'}">${type}</span>`
             ).join('');
 
-
             const stats = pokemon.stats;
             const totalStats = Object.values(stats).reduce((sum, val) => sum + val, 0);
 
+            const { primaryColor, secondaryColor } = getPokemonColors(pokemon);
+            const barBackground = primaryColor === secondaryColor
+                ? primaryColor
+                : `linear-gradient(90deg, ${primaryColor}, ${secondaryColor})`;
+
+            const spriteUrl =
+                "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/" +
+                pokemon.id +
+                ".png";
+
             const statsHTML = `
+                <img class="pokemon-image"
+                     src="${spriteUrl}"
+                     alt="${pokemon.name}">
                 <div class="pokemon-types">${typeBadges}</div>
                 <div><strong>Total Stats:</strong> ${totalStats}</div>
                 <div class="stats-grid">
@@ -420,7 +412,12 @@
                         <div class="stat-item">
                             <div>${stat.toUpperCase()}: ${value}</div>
                             <div class="stat-bar">
-                                <div class="stat-fill" style="width: ${(value / 255) * 100}%"></div>
+                                <div class="stat-fill"
+                                     style="
+                                        width: ${(value / 255) * 100}%;
+                                        background: ${barBackground};
+                                     ">
+                                </div>
                             </div>
                         </div>
                     `).join('')}
@@ -429,7 +426,6 @@
 
             detailsDiv.innerHTML = statsHTML;
         }
-
 
         function updateBattleAnalysis() {
             const battleResult = document.getElementById('battleResult');
@@ -440,23 +436,51 @@
                 return;
             }
 
-
             const score1 = calculateBattleScore(selectedPokemon1, selectedPokemon2);
             const score2 = calculateBattleScore(selectedPokemon2, selectedPokemon1);
 
+            const colors1 = getPokemonColors(selectedPokemon1);
+            const colors2 = getPokemonColors(selectedPokemon2);
 
             let winnerText = '';
             if (score1 > score2) {
-                winnerText = `<span class="winner">${selectedPokemon1.name}</span> wins against <span class="loser">${selectedPokemon2.name}</span>`;
+                winnerText = `
+                    <span class="winner" style="color:${colors1.primaryColor};">
+                        ${selectedPokemon1.name}
+                    </span>
+                    wins against
+                    <span class="loser" style="color:${colors2.primaryColor};">
+                        ${selectedPokemon2.name}
+                    </span>
+                `;
             } else if (score2 > score1) {
-                winnerText = `<span class="winner">${selectedPokemon2.name}</span> wins against <span class="loser">${selectedPokemon1.name}</span>`;
+                winnerText = `
+                    <span class="winner" style="color:${colors2.primaryColor};">
+                        ${selectedPokemon2.name}
+                    </span>
+                    wins against
+                    <span class="loser" style="color:${colors1.primaryColor};">
+                        ${selectedPokemon1.name}
+                    </span>
+                `;
             } else {
-                winnerText = `<span>It's a tie between ${selectedPokemon1.name} and ${selectedPokemon2.name}</span>`;
+                winnerText = `
+                    <span class="winner" style="color:${colors1.primaryColor};">
+                        ${selectedPokemon1.name}
+                    </span>
+                    and
+                    <span class="winner" style="color:${colors2.primaryColor};">
+                        ${selectedPokemon2.name}
+                    </span>
+                    tie
+                `;
             }
 
             battleResult.innerHTML = `
                 <h2>Battle Result</h2>
-                <div style="font-size: 20px; margin: 10px 0;">${winnerText}</div>
+                <div style="font-size: 18px; margin: 10px 0;">
+                    ${winnerText}
+                </div>
                 <div style="margin-top: 15px;">
                     <strong>${selectedPokemon1.name}:</strong> ${score1.toFixed(1)} points<br>
                     <strong>${selectedPokemon2.name}:</strong> ${score2.toFixed(1)} points
@@ -466,10 +490,8 @@
             createStatsChart();
         }
 
-
         function calculateBattleScore(attacker, defender) {
             const stats = attacker.stats;
-
 
             const score =
                 stats.attack * 1.2 +
@@ -482,23 +504,34 @@
             return score;
         }
 
-
         function createStatsChart() {
             const container = document.getElementById('statsChart');
             container.innerHTML = '';
 
-            const margin = { top: 20, right: 30, bottom: 40, left: 40 };
-            const width = 600 - margin.left - margin.right;
+            const legendWidth = 160;
+            const margin = { top: 20, right: 20, bottom: 70, left: 40 };
+            const baseWidth = 600;
+            const width = baseWidth - margin.left - margin.right - legendWidth;
             const height = 300 - margin.top - margin.bottom;
 
             const svg = d3.select('#statsChart')
                 .append('svg')
-                .attr('width', width + margin.left + margin.right)
+                .attr('width', width + margin.left + margin.right + legendWidth)
                 .attr('height', height + margin.top + margin.bottom)
                 .append('g')
                 .attr('transform', `translate(${margin.left},${margin.top})`);
 
             const stats = Object.keys(selectedPokemon1.stats);
+
+            const statLabelMap = {
+                hp: 'HP',
+                attack: 'ATK',
+                defense: 'DEF',
+                special_attack: 'SPA',
+                special_defense: 'SPD',
+                speed: 'SPE'
+            };
+
             const data = stats.map(stat => ({
                 stat: stat,
                 pokemon1: selectedPokemon1.stats[stat],
@@ -513,16 +546,51 @@
                 .domain([0, d3.max(data, d => Math.max(d.pokemon1, d.pokemon2))])
                 .range([height, 0]);
 
+            const xAxis = d3.svg.axis()
+                .scale(x)
+                .orient('bottom')
+                .tickFormat(d => statLabelMap[d] || d);
+
+            const yAxis = d3.svg.axis()
+                .scale(y)
+                .orient('left');
 
             svg.append('g')
                 .attr('class', 'x axis')
                 .attr('transform', `translate(0,${height})`)
-                .call(d3.svg.axis().scale(x).orient('bottom'));
+                .call(xAxis)
+                .selectAll('text')
+                .style('text-anchor', 'end')
+                .attr('dx', '-0.5em')
+                .attr('dy', '0.15em')
+                .attr('transform', 'rotate(-35)');
 
             svg.append('g')
                 .attr('class', 'y axis')
-                .call(d3.svg.axis().scale(y).orient('left'));
+                .call(yAxis);
 
+            const defs = svg.append('defs');
+
+            function createGradient(id, pokemon) {
+                const colors = getPokemonColors(pokemon);
+                const grad = defs.append('linearGradient')
+                    .attr('id', id)
+                    .attr('x1', '0%')
+                    .attr('y1', '0%')
+                    .attr('x2', '100%')
+                    .attr('y2', '0%');
+
+                grad.append('stop')
+                    .attr('offset', '0%')
+                    .attr('stop-color', colors.primaryColor);
+
+                grad.append('stop')
+                    .attr('offset', '100%')
+                    .attr('stop-color', colors.secondaryColor);
+            }
+
+            createGradient('gradPokemon1', selectedPokemon1);
+            createGradient('gradPokemon2', selectedPokemon2);
 
             svg.selectAll('.bar1')
                 .data(data)
@@ -533,8 +601,7 @@
                 .attr('y', d => y(d.pokemon1))
                 .attr('width', x.rangeBand() / 2)
                 .attr('height', d => height - y(d.pokemon1))
-                .style('fill', '#4CAF50');
-
+                .style('fill', 'url(#gradPokemon1)');
 
             svg.selectAll('.bar2')
                 .data(data)
@@ -545,36 +612,58 @@
                 .attr('y', d => y(d.pokemon2))
                 .attr('width', x.rangeBand() / 2)
                 .attr('height', d => height - y(d.pokemon2))
-                .style('fill', '#2196F3');
-
+                .style('fill', 'url(#gradPokemon2)');
 
             const legend = svg.append('g')
-                .attr('transform', `translate(${width - 100}, -10)`);
+                .attr('transform', `translate(${width + 20}, 10)`);
 
             legend.append('rect')
-                .attr('width', 12)
-                .attr('height', 12)
-                .style('fill', '#4CAF50');
+                .attr('width', 16)
+                .attr('height', 16)
+                .style('fill', 'url(#gradPokemon1)');
 
             legend.append('text')
-                .attr('x', 20)
-                .attr('y', 10)
+                .attr('x', 22)
+                .attr('y', 12)
                 .style('font-size', '12px')
                 .text(selectedPokemon1.name);
 
             legend.append('rect')
-                .attr('y', 15)
-                .attr('width', 12)
-                .attr('height', 12)
-                .style('fill', '#2196F3');
+                .attr('y', 24)
+                .attr('width', 16)
+                .attr('height', 16)
+                .style('fill', 'url(#gradPokemon2)');
 
             legend.append('text')
-                .attr('x', 20)
-                .attr('y', 25)
+                .attr('x', 22)
+                .attr('y', 36)
                 .style('font-size', '12px')
                 .text(selectedPokemon2.name);
-        }
 
+            legend.append('text')
+                .attr('x', 0)
+                .attr('y', 64)
+                .style('font-size', '11px')
+                .style('font-weight', 'bold')
+                .text('Stat abbreviations:');
+
+            const abbrevLines = [
+                'HP  = Hit Points',
+                'ATK = Attack',
+                'DEF = Defense',
+                'SPA = Special Attack',
+                'SPD = Special Defense',
+                'SPE = Speed'
+            ];
+
+            abbrevLines.forEach((line, i) => {
+                legend.append('text')
+                    .attr('x', 0)
+                    .attr('y', 80 + i * 12)
+                    .style('font-size', '10px')
+                    .text(line);
+            });
+        }
 
         document.addEventListener('DOMContentLoaded', init);
     </script>
